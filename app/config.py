@@ -1,4 +1,3 @@
-
 import os
 import tomllib
 from dataclasses import dataclass
@@ -55,7 +54,38 @@ def _require(table: dict[str, Any], key: str, section: str) -> Any:
     return table[key]
 
 
+def _require_env(name: str) -> str:
+    value = os.environ.get(name)
+    if not value:
+        raise ConfigError(f"missing required env var: {name}")
+    return value
+
+
+def _settings_from_env() -> Settings:
+    try:
+        server = ServerConfig(
+            host=os.environ.get("MYWEBAPP_HOST", "0.0.0.0"),
+            port=int(os.environ.get("MYWEBAPP_PORT", "8080")),
+        )
+        db = DbConfig(
+            host=_require_env("MYWEBAPP_DB_HOST"),
+            port=int(os.environ.get("MYWEBAPP_DB_PORT", "5432")),
+            name=os.environ.get("MYWEBAPP_DB_NAME", "mywebapp"),
+            user=os.environ.get("MYWEBAPP_DB_USER", "mywebapp"),
+            password=_require_env("MYWEBAPP_DB_PASSWORD"),
+            pool_min=int(os.environ.get("MYWEBAPP_DB_POOL_MIN", "2")),
+            pool_max=int(os.environ.get("MYWEBAPP_DB_POOL_MAX", "10")),
+        )
+        log = LogConfig(level=os.environ.get("MYWEBAPP_LOG_LEVEL", "INFO"))
+    except (TypeError, ValueError) as exc:
+        raise ConfigError(f"invalid config value from env: {exc}") from exc
+    return Settings(server=server, db=db, log=log)
+
+
 def load_settings(path: str | os.PathLike[str] | None = None) -> Settings:
+    if path is None and os.environ.get("MYWEBAPP_DB_HOST"):
+        return _settings_from_env()
+
     resolved = Path(path or os.environ.get("MYWEBAPP_CONFIG") or DEFAULT_CONFIG_PATH)
     if not resolved.is_file():
         raise ConfigError(f"config file not found: {resolved}")

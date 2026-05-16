@@ -1,37 +1,42 @@
 #!/usr/bin/env bash
 # Idempotent, version-aware migration runner.
-# Reads PG connection details from $MYWEBAPP_CONFIG (default /etc/mywebapp/config.toml),
-# applies migrations/*.sql in numeric order, records version in schema_version.
+# Connection source order:
+#   1. MYWEBAPP_DB_* env vars (container path, set by docker-compose)
+#   2. TOML file at $MYWEBAPP_CONFIG (default /etc/mywebapp/config.toml; VM/systemd path)
 # Each migration runs inside a single transaction — partial commits never happen.
 
 set -euo pipefail
 
-CONFIG="${MYWEBAPP_CONFIG:-/etc/mywebapp/config.toml}"
 MIGRATIONS_DIR="${MIGRATIONS_DIR:-$(cd "$(dirname "$0")/.." && pwd)/migrations}"
 
-if [[ ! -r "$CONFIG" ]]; then
-    echo "migrate.sh: cannot read config at $CONFIG" >&2
-    exit 1
-fi
-
-# Extract [db] section values using a Python one-liner (stdlib tomllib).
-read_db() {
-    python3 - "$CONFIG" "$1" <<'PY'
+if [ -n "${MYWEBAPP_DB_HOST:-}" ]; then
+    export PGHOST="$MYWEBAPP_DB_HOST"
+    export PGPORT="${MYWEBAPP_DB_PORT:-5432}"
+    export PGDATABASE="${MYWEBAPP_DB_NAME:-mywebapp}"
+    export PGUSER="${MYWEBAPP_DB_USER:-mywebapp}"
+    export PGPASSWORD="${MYWEBAPP_DB_PASSWORD:?MYWEBAPP_DB_PASSWORD must be set}"
+else
+    CONFIG="${MYWEBAPP_CONFIG:-/etc/mywebapp/config.toml}"
+    if [[ ! -r "$CONFIG" ]]; then
+        echo "migrate.sh: cannot read config at $CONFIG" >&2
+        exit 1
+    fi
+    read_db() {
+        python3 - "$CONFIG" "$1" <<'PY'
 import sys, tomllib
 with open(sys.argv[1], "rb") as f:
     cfg = tomllib.load(f)
 print(cfg["db"][sys.argv[2]])
 PY
-}
+    }
+    PGHOST=$(read_db host)
+    PGPORT=$(read_db port)
+    PGDATABASE=$(read_db name)
+    PGUSER=$(read_db user)
+    PGPASSWORD=$(read_db password)
+    export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
+fi
 
-PGHOST=$(read_db host)
-PGPORT=$(read_db port)
-PGDATABASE=$(read_db name)
-PGUSER=$(read_db user)
-PGPASSWORD=$(read_db password)
-export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
-
-# Bootstrap schema_version table.
 psql --quiet --no-psqlrc --set=ON_ERROR_STOP=1 \
     --file="$MIGRATIONS_DIR/schema_version.sql"
 
