@@ -1,0 +1,18 @@
+# mywebapp configuration — installed to /etc/mywebapp/config.toml.
+# Permissions on the installed file: 0640 root:mywebapp.
+
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[db]
+host = "127.0.0.1"
+port = 5432
+name = "mywebapp"
+user = "mywebapp"
+password = "REPLACED_AT_INSTALL"
+pool_min = 2
+pool_max = 10
+
+[log]
+level = "INFO"

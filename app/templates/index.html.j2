@@ -1,0 +1,14 @@
+{% extends "_layout.html.j2" %}
+{% block title %}mywebapp — endpoints{% endblock %}
+{% block content %}
+<h1>mywebapp</h1>
+<p>Simple Inventory — business endpoints:</p>
+<table>
+<thead><tr><th>Method</th><th>Path</th></tr></thead>
+<tbody>
+{% for method, path in endpoints %}
+<tr><td>{{ method }}</td><td><a href="{{ path|replace('<id>', '1') }}">{{ path }}</a></td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,18 @@
+# Local dev config — points at the docker-compose PG documented in docs/dev-setup.md.
+# Do NOT install this file as /etc/mywebapp/config.toml on a VM.
+
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[db]
+host = "127.0.0.1"
+port = 5432
+name = "mywebapp"
+user = "mywebapp"
+password = "dev"
+pool_min = 2
+pool_max = 5
+
+[log]
+level = "DEBUG"

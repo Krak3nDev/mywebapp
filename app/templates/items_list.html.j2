@@ -1,0 +1,15 @@
+{% extends "_layout.html.j2" %}
+{% block title %}items{% endblock %}
+{% block content %}
+<h1>Items</h1>
+<table>
+<thead><tr><th>id</th><th>name</th></tr></thead>
+<tbody>
+{% for item in items %}
+<tr><td>{{ item.id }}</td><td><a href="/items/{{ item.id }}">{{ item.name }}</a></td></tr>
+{% else %}
+<tr><td colspan="2">no items</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endblock %}

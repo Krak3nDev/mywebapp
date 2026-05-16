@@ -1,0 +1,11 @@
+[Unit]
+Description=mywebapp HTTP socket
+
+[Socket]
+ListenStream=127.0.0.1:8080
+FileDescriptorName=mywebapp
+NoDelay=true
+Accept=no
+
+[Install]
+WantedBy=sockets.target
