@@ -97,8 +97,26 @@ Troubleshooting:
 sudo bash deploy/install.sh
 ```
 
+## CI/CD (Лабораторна №3)
+
+Один workflow `.github/workflows/ci.yml`, 5 jobs:
+
+| Тригер | lint | test | build | deploy | verify |
+| --- | --- | --- | --- | --- | --- |
+| push до `main` | ✓ | ✓ + coverage artifact | ✓ (`latest`, `sha-<full>`) | — | — |
+| PR до `main` | ✓ | ✓ (блокує merge при fail) | — | — | — |
+| анотований тег `v*` | ✓ | ✓ | ✓ (`stable`, `<tag>`) | ✓ (на self-hosted runner) | ✓ |
+
+GHCR публікація: `ghcr.io/krak3ndev/mywebapp:<tag>`. Self-hosted runner на окремій ВМ (mark `lab3-runner`), SSH-доступ до target-node з ключа в `secrets.TARGET_SSH_KEY`.
+
+Покриття коду тестами: ≥40% (gate; зараз ~86%). Артефакти: `coverage-html`, `coverage.xml` на pushes до `main` і тегах.
+
+Документація розгортання Lab 3 (VM provisioning, реєстрація runner'а, branch protection, демо-теги): [`docs/runbook.md`](docs/runbook.md). План демонстрацій: [`docs/demo-plan.md`](docs/demo-plan.md).
+
 ## Документація
 
 - [`docs/api.md`](docs/api.md) — повний опис ендпоінтів
-- [`docs/install-runbook.md`](docs/install-runbook.md) — розгортання на ВМ
+- [`docs/install-runbook.md`](docs/install-runbook.md) — розгортання на ВМ (Лаба №1, systemd)
 - [`docs/dev-setup.md`](docs/dev-setup.md) — локальне середовище розробки
+- [`docs/runbook.md`](docs/runbook.md) — CI/CD runbook (Лаба №3)
+- [`docs/demo-plan.md`](docs/demo-plan.md) — план демонстрацій для звіту
