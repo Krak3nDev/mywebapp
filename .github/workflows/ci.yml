@@ -162,7 +162,9 @@ jobs:
       - name: reject lightweight tags
         run: |
           TAG="${GIT_REF#refs/tags/}"
-          TYPE="$(git cat-file -t "$TAG")"
+          # actions/checkout@v4 loses tag-object metadata; re-fetch the actual tag object explicitly.
+          git fetch --tags --force origin
+          TYPE="$(git cat-file -t "refs/tags/$TAG")"
           if [[ "$TYPE" != "tag" ]]; then
             echo "::error::lightweight tag '$TAG' (type=$TYPE); annotated tag required (git tag -a vX.Y.Z -m ...)"
             exit 1
