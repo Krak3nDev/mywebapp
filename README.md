@@ -97,7 +97,7 @@ Troubleshooting:
 sudo bash deploy/install.sh
 ```
 
-## CI/CD (Лабораторна №3)
+## CI/CD (Лабораторна №3 — Continuous Integration ## CI/CD (Лабораторна №3) Delivery)
 
 Один workflow `.github/workflows/ci.yml`, 5 jobs:
 
