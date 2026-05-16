@@ -1,3 +1,10 @@
+x-db-env: &db-env
+  MYWEBAPP_DB_HOST: postgres
+  MYWEBAPP_DB_PORT: "5432"
+  MYWEBAPP_DB_NAME: ${POSTGRES_DB:-mywebapp}
+  MYWEBAPP_DB_USER: ${POSTGRES_USER:-mywebapp}
+  MYWEBAPP_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -19,12 +26,7 @@ services:
   migrate:
     build: .
     entrypoint: ["bash", "/opt/app/scripts/migrate.sh"]
-    environment:
-      MYWEBAPP_DB_HOST: postgres
-      MYWEBAPP_DB_PORT: "5432"
-      MYWEBAPP_DB_NAME: ${POSTGRES_DB:-mywebapp}
-      MYWEBAPP_DB_USER: ${POSTGRES_USER:-mywebapp}
-      MYWEBAPP_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    environment: *db-env
     depends_on:
       postgres:
         condition: service_healthy
@@ -34,12 +36,7 @@ services:
 
   app:
     build: .
-    environment:
-      MYWEBAPP_DB_HOST: postgres
-      MYWEBAPP_DB_PORT: "5432"
-      MYWEBAPP_DB_NAME: ${POSTGRES_DB:-mywebapp}
-      MYWEBAPP_DB_USER: ${POSTGRES_USER:-mywebapp}
-      MYWEBAPP_DB_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    environment: *db-env
     depends_on:
       postgres:
         condition: service_healthy
