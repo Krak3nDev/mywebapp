@@ -174,20 +174,22 @@ jobs:
           SSH_KEY: ${{ secrets.TARGET_SSH_KEY }}
           TARGET_HOST: ${{ secrets.TARGET_HOST }}
           TARGET_USER: ${{ secrets.TARGET_USER }}
+          TARGET_PORT: ${{ secrets.TARGET_PORT }}
           GHCR_TOKEN: ${{ secrets.GHCR_READ_TOKEN }}
         run: |
           set -euo pipefail
           OWNER_LC="$(printf '%s' "$REPO_OWNER" | tr '[:upper:]' '[:lower:]')"
           TAG="${GIT_REF#refs/tags/}"
           IMAGE="ghcr.io/${OWNER_LC}/mywebapp:${TAG}"
-          echo "Deploying $IMAGE to $TARGET_HOST"
+          PORT="${TARGET_PORT:-22}"
+          echo "Deploying $IMAGE to ${TARGET_HOST}:${PORT}"
 
           mkdir -p ~/.ssh
           install -m 0600 /dev/stdin ~/.ssh/deploy_key <<<"$SSH_KEY"
-          ssh-keyscan -H "$TARGET_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p "$PORT" -H "$TARGET_HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
           export IMAGE OWNER_LC GHCR_TOKEN
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new \
+          ssh -i ~/.ssh/deploy_key -p "$PORT" -o StrictHostKeyChecking=accept-new \
               "${TARGET_USER}@${TARGET_HOST}" \
               IMAGE="$IMAGE" OWNER_LC="$OWNER_LC" GHCR_TOKEN="$GHCR_TOKEN" bash -se <<'REMOTE'
           set -euo pipefail
@@ -210,6 +212,7 @@ jobs:
       - name: run verify-deploy.sh
         env:
           TARGET: ${{ secrets.TARGET_HOST }}
+          TARGET_HTTP_PORT: ${{ secrets.TARGET_HTTP_PORT }}
         run: |
           chmod +x scripts/verify-deploy.sh
           bash scripts/verify-deploy.sh

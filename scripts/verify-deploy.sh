@@ -6,7 +6,12 @@
 set -euo pipefail
 
 TARGET="${TARGET:?TARGET must be set (host or IP of target node)}"
-BASE="http://${TARGET}"
+TARGET_HTTP_PORT="${TARGET_HTTP_PORT:-80}"
+if [[ "$TARGET_HTTP_PORT" == "80" ]]; then
+    BASE="http://${TARGET}"
+else
+    BASE="http://${TARGET}:${TARGET_HTTP_PORT}"
+fi
 
 pass=0
 fail=0
