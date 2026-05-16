@@ -63,7 +63,33 @@ shellcheck deploy/install.sh deploy/lib/*.sh scripts/*.sh
 pytest -q
 ```
 
-## Розгортання на ВМ
+## Запуск через Docker Compose (Лабораторна №2)
+
+```bash
+cp .env.example .env
+# відредагуйте POSTGRES_PASSWORD / MYWEBAPP_DB_PASSWORD у .env
+docker compose up -d --build
+```
+
+Сервіси: `nginx` (публічний :80) → `app` (FastAPI :8080) → `postgres:16-alpine` (named volume `mywebapp-pgdata`). Окрема мережа `mywebapp-net`. Міграції виконуються одноразовим сервісом `migrate` перед стартом `app`.
+
+Перевірка:
+```bash
+curl http://localhost/items
+curl -X POST -H 'Content-Type: application/json' -d '{"name":"bolt","quantity":3}' http://localhost/items
+docker compose ps                        # migrate Exited(0); app/nginx/postgres healthy
+```
+
+Збереження даних:
+- `docker compose down` — контейнери видалено, том `mywebapp-pgdata` залишається; `up -d` повертає попередні дані.
+- `docker compose down -v` — деструктивно, том знищено, наступний `up -d` створить порожню БД.
+
+Troubleshooting:
+- Конфлікт хост-порту 80 → виставити `MYWEBAPP_HOST_PORT=8080` у `.env`.
+- Сервіс `app` не стартує (`unhealthy` / залежності) → `docker compose logs migrate` (можлива помилка SQL/credentials).
+- Очистити все одразу: `docker compose down --volumes --remove-orphans`.
+
+## Розгортання на ВМ (systemd, без Docker)
 
 Див. [`docs/install-runbook.md`](docs/install-runbook.md). Коротко:
 
