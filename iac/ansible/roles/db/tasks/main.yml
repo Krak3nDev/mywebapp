@@ -1,0 +1,72 @@
+---
+- name: Install PostgreSQL + adapter
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+    lock_timeout: 120
+
+- name: Detect installed PostgreSQL major version
+  ansible.builtin.shell: |
+    set -o pipefail
+    psql --version | awk '{print $3}' | cut -d. -f1
+  args:
+    executable: /bin/bash
+  register: pg_version
+  changed_when: false
+  check_mode: false
+
+- name: Render postgresql.conf (listen on private NIC, scram-sha-256)
+  ansible.builtin.template:
+    src: postgresql.conf.j2
+    dest: "/etc/postgresql/{{ pg_version.stdout }}/main/conf.d/10-mywebapp.conf"
+    owner: postgres
+    group: postgres
+    mode: "0640"
+  notify: restart postgresql
+
+- name: Trigger immediate restart so postgres listens on private IP before role+db tasks
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure postgresql is up after handler flush
+  ansible.builtin.systemd:
+    name: postgresql
+    state: started
+    enabled: true
+
+- name: Create role + db + privileges (peer auth as postgres)
+  become_user: postgres
+  block:
+    - name: PostgreSQL role mywebapp
+      community.postgresql.postgresql_user:
+        name: "{{ db_user }}"
+        password: "{{ vault_db_password }}"
+        encrypted: true
+        state: present
+
+    - name: PostgreSQL database mywebapp
+      community.postgresql.postgresql_db:
+        name: "{{ db_name }}"
+        owner: "{{ db_user }}"
+        state: present
+
+    - name: Grant all privileges on database
+      community.postgresql.postgresql_privs:
+        database: "{{ db_name }}"
+        roles: "{{ db_user }}"
+        type: database
+        privs: ALL
+        state: present
+
+- name: Render pg_hba.conf (worker private IP only, scram-sha-256)
+  ansible.builtin.template:
+    src: pg_hba.conf.j2
+    dest: "/etc/postgresql/{{ pg_version.stdout }}/main/pg_hba.conf"
+    owner: postgres
+    group: postgres
+    mode: "0640"
+  notify: reload postgresql

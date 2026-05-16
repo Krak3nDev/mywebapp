@@ -1,0 +1,15 @@
+---
+- name: Import users tasks
+  ansible.builtin.import_tasks: users.yml
+
+- name: Import docker tasks
+  ansible.builtin.import_tasks: docker.yml
+
+- name: Import app tasks
+  ansible.builtin.import_tasks: app.yml
+
+- name: Import nginx tasks
+  ansible.builtin.import_tasks: nginx.yml
+
+- name: Import sudoers tasks
+  ansible.builtin.import_tasks: sudoers.yml

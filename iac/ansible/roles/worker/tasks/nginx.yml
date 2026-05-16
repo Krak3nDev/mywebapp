@@ -1,0 +1,36 @@
+---
+- name: Install nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+    lock_timeout: 120
+
+- name: Remove default nginx site (idempotent)
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: reload nginx
+
+- name: Render mywebapp site config
+  ansible.builtin.template:
+    src: mywebapp.conf.j2
+    dest: /etc/nginx/sites-available/mywebapp.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload nginx
+
+- name: Enable mywebapp site (symlink)
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/mywebapp.conf
+    dest: /etc/nginx/sites-enabled/mywebapp.conf
+    state: link
+  notify: reload nginx
+
+- name: Nginx running + enabled
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+    enabled: true

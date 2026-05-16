@@ -1,0 +1,57 @@
+---
+- name: Worker — /health/alive returns 200 internally
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8080/health/alive
+    status_code: 200
+  retries: 12
+  delay: 5
+  register: alive
+  until: alive.status == 200
+
+- name: Worker — /health/ready returns 200 (worker → db link)
+  ansible.builtin.uri:
+    url: http://127.0.0.1:8080/health/ready
+    status_code: 200
+  retries: 12
+  delay: 5
+  register: ready
+  until: ready.status == 200
+
+- name: External — / returns 200 (HTML index)
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}/"
+    headers:
+      Accept: text/html
+    status_code: 200
+  delegate_to: localhost
+  become: false
+
+- name: External — /items returns 200 + JSON
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}/items"
+    headers:
+      Accept: application/json
+    status_code: 200
+    return_content: true
+  delegate_to: localhost
+  become: false
+  register: items
+
+- name: Assert /items is a JSON array
+  ansible.builtin.assert:
+    that:
+      - items.json is iterable
+
+- name: External — /admin returns 404 (allow-list)
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}/admin"
+    status_code: 404
+  delegate_to: localhost
+  become: false
+
+- name: External — /health/alive returns 404 (nginx blocks)
+  ansible.builtin.uri:
+    url: "http://{{ ansible_host }}/health/alive"
+    status_code: 404
+  delegate_to: localhost
+  become: false

@@ -1,0 +1,51 @@
+---
+- name: /etc/mywebapp directory (root-owned, app-readable)
+  ansible.builtin.file:
+    path: /etc/mywebapp
+    state: directory
+    owner: root
+    group: app
+    mode: "0750"
+
+- name: Render config.toml (Jinja template — variant V2 mandates TOML)
+  ansible.builtin.template:
+    src: config.toml.j2
+    dest: /etc/mywebapp/config.toml
+    owner: root
+    group: app
+    mode: "0640"
+  notify: restart mywebapp
+
+- name: /opt/mywebapp working dir
+  ansible.builtin.file:
+    path: /opt/mywebapp
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Render docker-compose.yml
+  ansible.builtin.template:
+    src: compose.yaml.j2
+    dest: /opt/mywebapp/compose.yaml
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart mywebapp
+
+- name: Render systemd unit for the compose stack
+  ansible.builtin.template:
+    src: mywebapp.service.j2
+    dest: /etc/systemd/system/mywebapp.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify:
+    - daemon-reload
+    - restart mywebapp
+
+- name: Enable mywebapp.service (start happens via notify)
+  ansible.builtin.systemd:
+    name: mywebapp.service
+    enabled: true
+    daemon_reload: true

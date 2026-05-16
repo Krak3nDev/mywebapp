@@ -1,0 +1,30 @@
+# Managed by Ansible (Лабораторна №4).
+services:
+  migrate:
+    image: {{ mywebapp_image }}
+    entrypoint: ["bash", "/opt/app/scripts/migrate.sh"]
+    environment:
+      MYWEBAPP_DB_HOST: "{{ hostvars[groups['db'][0]].private_ip }}"
+      MYWEBAPP_DB_PORT: "{{ db_port }}"
+      MYWEBAPP_DB_NAME: "{{ db_name }}"
+      MYWEBAPP_DB_USER: "{{ db_user }}"
+      MYWEBAPP_DB_PASSWORD: "{{ vault_db_password }}"
+    network_mode: host
+    restart: "no"
+
+  app:
+    image: {{ mywebapp_image }}
+    environment:
+      MYWEBAPP_CONFIG: /etc/mywebapp/config.toml
+    volumes:
+      - /etc/mywebapp:/etc/mywebapp:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    network_mode: host
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/health/alive || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 6
+    restart: unless-stopped

@@ -1,0 +1,12 @@
+# Managed by Ansible (Лабораторна №4) — do not edit by hand.
+
+# Local peer auth — used by Ansible to manage role+db as `postgres` superuser.
+local   all             postgres                                peer
+local   all             all                                     peer
+
+# Worker-VM connections from the private subnet only.
+host    {{ db_name }}   {{ db_user }}   {{ hostvars[groups['workers'][0]].private_ip }}/32   scram-sha-256
+
+# Reject all other host connections explicitly.
+host    all             all             0.0.0.0/0               reject
+host    all             all             ::/0                    reject

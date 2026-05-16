@@ -1,0 +1,13 @@
+# Encrypted vault file. Generate ONCE and commit:
+#
+#   openssl rand -hex 24 > /tmp/dbp
+#   ansible-vault encrypt_string "$(cat /tmp/dbp)" --name vault_db_password \
+#       > iac/ansible/inventory/group_vars/vault.yml
+#   shred -u /tmp/dbp
+#
+# DO NOT regenerate on every run — `postgresql_user` would report changed=true
+# on every play, breaking idempotency.
+
+vault_db_password: !vault |
+  $ANSIBLE_VAULT;1.1;AES256
+  ...encrypted bytes...

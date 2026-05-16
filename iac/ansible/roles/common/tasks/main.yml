@@ -1,0 +1,50 @@
+---
+- name: System packages (idempotent)
+  ansible.builtin.apt:
+    name:
+      - python3-psycopg2
+      - jq
+      - curl
+      - ca-certificates
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+    lock_timeout: 120
+
+- name: Ensure student account exists (gradebook home)
+  ansible.builtin.user:
+    name: student
+    shell: /bin/bash
+    state: present
+    create_home: true
+
+- name: Write /home/student/gradebook with N (variant)
+  ansible.builtin.copy:
+    content: "{{ gradebook_value }}\n"
+    dest: /home/student/gradebook
+    owner: student
+    group: student
+    mode: "0644"
+
+- name: Ensure teacher user exists (admin, password 12345678, sudo with password)
+  ansible.builtin.user:
+    name: teacher
+    shell: /bin/bash
+    state: present
+    create_home: true
+    groups: sudo
+    append: true
+    password: "{{ teacher_password_plain | password_hash('sha512') }}"
+    update_password: on_create
+
+- name: Allow SSH password auth for teacher (one-shot per host)
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/40-teacher.conf
+    content: |
+      PasswordAuthentication yes
+      Match User teacher
+        PasswordAuthentication yes
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload ssh

@@ -1,0 +1,15 @@
+---
+# Image SSOT for Lab 4 — matches Lab 3 CI/CD output and target-node-install.sh default.
+mywebapp_image: "ghcr.io/krak3ndev/mywebapp:stable"
+
+# Lab-spec passwords (used only as DEFAULT; users are forced to change on first SSH).
+teacher_password_plain: "12345678"
+operator_password_plain: "12345678"
+
+# Variant N=5 — written into /home/student/gradebook on every VM.
+gradebook_value: "5"
+
+# Database settings (no password here — vault stores it).
+db_name: "mywebapp"
+db_user: "mywebapp"
+db_port: 5432

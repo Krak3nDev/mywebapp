@@ -1,0 +1,17 @@
+# Managed by Ansible (Лабораторна №4) — variant V2: TOML config + PostgreSQL.
+
+[server]
+host = "0.0.0.0"
+port = 8080
+
+[db]
+host = "{{ hostvars[groups['db'][0]].private_ip }}"
+port = {{ db_port }}
+name = "{{ db_name }}"
+user = "{{ db_user }}"
+password = "{{ vault_db_password }}"
+pool_min = 2
+pool_max = 10
+
+[log]
+level = "INFO"

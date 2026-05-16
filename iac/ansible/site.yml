@@ -1,0 +1,40 @@
+---
+- name: Wait for cloud-init to finish on every VM
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Wait for SSH
+      ansible.builtin.wait_for_connection:
+        timeout: 300
+
+    - name: Wait for cloud-init done marker
+      ansible.builtin.wait_for:
+        path: /var/lib/cloud/instance/cloud-init-done
+        timeout: 600
+
+    - name: Gather facts now that cloud-init is done
+      ansible.builtin.setup:
+
+- name: Bootstrap shared state (teacher, gradebook, hardening)
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Provision the database VM
+  hosts: db
+  become: true
+  roles:
+    - db
+
+- name: Provision the worker VM (nginx + mywebapp container)
+  hosts: workers
+  become: true
+  roles:
+    - worker
+
+- name: Post-deploy verification
+  hosts: workers
+  become: true
+  roles:
+    - verify
