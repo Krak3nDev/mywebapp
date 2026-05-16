@@ -18,3 +18,5 @@ dist/
 .vscode/
 *.log
 local-config.toml
+.env
+!.env.example
