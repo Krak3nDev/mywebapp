@@ -9,6 +9,7 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 FROM python:3.12-slim-bookworm AS runtime
 
+# hadolint ignore=DL3008
 RUN apt-get update \
  && apt-get install --no-install-recommends -y postgresql-client curl bash \
  && rm -rf /var/lib/apt/lists/*
