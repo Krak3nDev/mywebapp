@@ -13,7 +13,16 @@ fi
 RUNNER_HOME=/opt/actions-runner
 RUNNER_USER=runner
 RUNNER_VERSION="${RUNNER_VERSION:-2.319.1}"
-RUNNER_ARCH="${RUNNER_ARCH:-x64}"
+
+# Auto-detect runner arch (x64 for amd64, arm64 for aarch64).
+detect_arch() {
+    case "$(uname -m)" in
+        x86_64)  echo x64 ;;
+        aarch64|arm64) echo arm64 ;;
+        *) echo "unsupported arch: $(uname -m)" >&2; exit 1 ;;
+    esac
+}
+RUNNER_ARCH="${RUNNER_ARCH:-$(detect_arch)}"
 
 export DEBIAN_FRONTEND=noninteractive
 
